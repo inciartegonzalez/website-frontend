@@ -6,6 +6,7 @@
     <title>Inciarte & Gonzalez Abogados</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <link href="https://fonts.googleapis.com/css2?family=Arsenal:ital,wght@0,400;0,700;1,400;1,700&family=Cinzel:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         body {
@@ -293,6 +294,9 @@
                             <label for="message" class="block text-gray-700 text-sm font-bold mb-2" data-en="Message" data-es="Mensaje">Message</label>
                             <textarea id="message" name="message" rows="6" required class="appearance-none border border-gray-200 rounded-md w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-primary-blue focus:border-transparent"></textarea>
                         </div>
+                        
+                        <div class="g-recaptcha" data-sitekey="6LdZEY8rAAAAAP3jkXlPDTr_Z4qRLZItX4fAs3VZ"></div>
+
                         <button type="submit" class="w-full bg-primary-blue hover:bg-gray-800 text-white font-bold py-3 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-blue transition-colors duration-200 text-lg" data-en="Send Message" data-es="Enviar Mensaje">Send Message</button>
                     </form>
                     
@@ -410,11 +414,20 @@
             formMessage.classList.add('hidden'); // Hide previous messages
             formMessage.classList.remove('bg-green-100', 'text-green-800', 'bg-red-100', 'text-red-800');
 
+            const recaptchaResponse = grecaptcha.getResponse();
+            if (!recaptchaResponse) {
+                formMessage.classList.remove('hidden');
+                formMessage.classList.add('bg-red-100', 'text-red-800');
+                formMessage.textContent = currentLang === 'en' ? 'Please complete the reCAPTCHA.' : 'Por favor, complete el reCAPTCHA.';
+                return;
+            }
+
             const formData = {
                 name: document.getElementById('name').value,
                 email: document.getElementById('email').value,
                 subject: document.getElementById('subject').value,
                 message: document.getElementById('message').value,
+                'g-recaptcha-response': recaptchaResponse,
             };
 
             try {
@@ -426,6 +439,8 @@
                     },
                     body: JSON.stringify(formData),
                 });
+
+                grecaptcha.reset(); 
 
                 const result = await response.json();
 
@@ -440,6 +455,7 @@
                 }
             } catch (error) {
                 console.error('Error submitting form:', error);
+                grecaptcha.reset();
                 formMessage.classList.remove('hidden');
                 formMessage.classList.add('bg-red-100', 'text-red-800');
                 formMessage.textContent = currentLang === 'en' ? 'An error occurred while sending your message. Please try again later.' : 'Ocurrió un error al enviar su mensaje. Por favor, inténtelo de nuevo más tarde.';
